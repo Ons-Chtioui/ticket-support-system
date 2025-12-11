@@ -48,7 +48,23 @@ How to Create a Superuser
 This account is essential for accessing the Django Admin Panel and testing administrative features:
 # Execute this in the backend terminal
 python manage.py createsuperuser
+or
+python manage.py shell
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+admin_user = User.objects.create_superuser(
+    username='admin_api',
+    email='admin@test.com',
+    password='password123'
+)
+
+admin_user.role = 'Admin'
+admin_user.save()
+
+exit()
 
 2. Backend API Endpoints (DRF)
 This section details the REST endpoints managed by the Django backend. All URLs are prefixed with http://127.0.0.1:8000/api/.
@@ -56,7 +72,8 @@ This section details the REST endpoints managed by the Django backend. All URLs 
 How to Test APIs
 APIs require a valid JWT Access Token in the request header.
 Use the POST (http://127.0.0.1:8000/api/auth/login/).
-Use the GET (http://127.0.0.1:8000/api/tickets/).
+Use the GET 
+(http://127.0.0.1:8000/api/tickets/).
 For any protected endpoint, include the header: Authorization: Bearer [YOUR_ACCESS_TOKEN]
 
 3. Validation and Evaluation
