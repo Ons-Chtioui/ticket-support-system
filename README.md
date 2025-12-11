@@ -48,9 +48,10 @@ How to Create a Superuser
 This account is essential for accessing the Django Admin Panel and testing administrative features:
 # Execute this in the backend terminal
 python manage.py createsuperuser
-or
-python manage.py shell
 
+or
+
+python manage.py shell
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
