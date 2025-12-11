@@ -8,23 +8,23 @@ const AdminPanel = () => {
   const { tickets, loading, error, deleteTicket, fetchTickets, updateTicketStatus } = useTickets();
   const navigate = useNavigate();
 
-  // --- 1. STATES FOR FILTERS AND PAGINATION ---
+  // --- STATES FOR FILTERS AND PAGINATION ---
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  // States for the Modal
+  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
 
-  // --- 2. SMART LOAD FUNCTION ---
+  // --- SMART LOAD FUNCTION ---
   const loadData = () => {
     const params = {
-      page: page, 
-      search: searchTerm, 
-      category: category !== '' ? category : undefined, 
-      status: statusFilter !== '' ? statusFilter : undefined 
+      page: page,
+      search: searchTerm || undefined,
+      category: category || undefined,
+      status: statusFilter || undefined,
     };
     fetchTickets(params);
   };
@@ -32,11 +32,11 @@ const AdminPanel = () => {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line
-  }, [page, category, statusFilter]); 
+  }, [page, category, statusFilter]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setPage(1); 
+    setPage(1);
     loadData();
   };
 
@@ -45,7 +45,7 @@ const AdminPanel = () => {
     setCategory('');
     setStatusFilter('');
     setPage(1);
-    fetchTickets(); 
+    fetchTickets();
   };
 
   // --- ACTIONS ---
@@ -59,8 +59,9 @@ const AdminPanel = () => {
   };
 
   const onDelete = async (id) => {
-    if(window.confirm("Are you sure you want to delete this ticket?")) {
+    if (window.confirm("Are you sure you want to delete this ticket?")) {
       await deleteTicket(id);
+      loadData(); // recharge la liste après suppression
     }
   };
 
@@ -68,7 +69,7 @@ const AdminPanel = () => {
     try {
       if (editingTicket) {
         await updateTicketStatus(editingTicket.id, data.status);
-        loadData(); 
+        loadData();
       }
       setShowModal(false);
     } catch (err) {
@@ -77,16 +78,20 @@ const AdminPanel = () => {
     }
   };
 
+  // --- HELPER FOR AUTHOR ---
+  const getAuthorName = (ticket) => {
+    return ticket.createdBy?.username || ticket.createdBy || ticket.createdBy_username || ticket.username || 'Anonymous';
+  };
+
   // --- RENDER ---
   return (
     <Container className="mt-4">
       <h2 className="fw-bold mb-4">Ticket Administration</h2>
 
-      {/* --- FILTER AND SEARCH BAR --- */}
+      {/* FILTER & SEARCH */}
       <div className="bg-light p-3 rounded shadow-sm mb-4">
         <Form onSubmit={handleSearchSubmit}>
           <Row className="g-3 align-items-end">
-            
             {/* Search */}
             <Col md={4}>
               <Form.Label className="fw-bold small text-muted">Search</Form.Label>
@@ -123,17 +128,17 @@ const AdminPanel = () => {
               </Form.Select>
             </Col>
 
-            {/* Reset Button */}
+            {/* Reset */}
             <Col md={2}>
               <div className="d-grid">
-                 <Button variant="outline-secondary" onClick={handleReset}>Reset</Button>
+                <Button variant="outline-secondary" onClick={handleReset}>Reset</Button>
               </div>
             </Col>
           </Row>
         </Form>
       </div>
 
-      {/* --- TABLE --- */}
+      {/* TABLE */}
       {loading ? (
         <div className="text-center py-5"><Spinner animation="border" /></div>
       ) : error ? (
@@ -146,8 +151,8 @@ const AdminPanel = () => {
                 <tr>
                   <th>ID</th>
                   <th>Title</th>
-                  <th>Author</th> 
-                  <th>Category</th> 
+                  <th>Author</th>
+                  <th>Category</th>
                   <th>Status</th>
                   <th className="text-end">Actions</th>
                 </tr>
@@ -158,14 +163,12 @@ const AdminPanel = () => {
                     <tr key={ticket.id}>
                       <td><small className="text-muted">#{ticket.id}</small></td>
                       <td>
-                        <span className="fw-bold text-dark">{ticket.title}</span><br/>
+                        <span className="fw-bold text-dark">{ticket.title}</span><br />
                         <small className="text-muted">
-                            {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}
+                          {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '-'}
                         </small>
                       </td>
-                      <td>
-                        👤 {ticket.createdBy?.username || ticket.createdBy || 'Anonymous'}
-                      </td>
+                      <td>👤 {getAuthorName(ticket)}</td>
                       <td>
                         <Badge bg="light" text="dark" className="border">
                           {ticket.category || 'Uncategorized'}
@@ -173,8 +176,8 @@ const AdminPanel = () => {
                       </td>
                       <td>
                         <Badge bg={
-                            ['New'].includes(ticket.status) ? 'success' : 
-                            ['Resolved'].includes(ticket.status) ? 'secondary' : 'warning'
+                          ticket.status === 'New' ? 'success' :
+                          ticket.status === 'Resolved' ? 'secondary' : 'warning'
                         }>
                           {ticket.status}
                         </Badge>
@@ -197,19 +200,19 @@ const AdminPanel = () => {
             </Table>
           </div>
 
-          {/* --- PAGINATION --- */}
+          {/* PAGINATION */}
           <div className="d-flex justify-content-center mt-4 gap-2">
-            <Button 
-              variant="outline-primary" 
-              disabled={page === 1} 
+            <Button
+              variant="outline-primary"
+              disabled={page === 1}
               onClick={() => setPage(page - 1)}
             >
               &laquo; Previous
             </Button>
             <span className="align-self-center fw-bold text-muted px-2">Page {page}</span>
-            <Button 
-              variant="outline-primary" 
-              disabled={tickets && tickets.length < 10} 
+            <Button
+              variant="outline-primary"
+              disabled={tickets && tickets.length < 10}
               onClick={() => setPage(page + 1)}
             >
               Next &raquo;
@@ -219,9 +222,9 @@ const AdminPanel = () => {
       )}
 
       {/* MODAL */}
-      <TicketFormModal 
-        show={showModal} 
-        handleClose={() => setShowModal(false)} 
+      <TicketFormModal
+        show={showModal}
+        handleClose={() => setShowModal(false)}
         handleSubmit={onFormSubmit}
         ticketToEdit={editingTicket}
       />

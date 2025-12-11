@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Button, Container, Card, Alert, Spinner, FloatingLabel } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import api from '../services/api'; // Appel direct à axios
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -14,22 +14,17 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Make sure you have a 'register' function in your AuthContext
-  const { register } = useAuth(); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // 1. Client-side validation
+    // Validation simple côté client
     if (formData.password !== formData.confirmPassword) {
       return setError('Passwords do not match.');
     }
@@ -40,15 +35,21 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      // 2. Call backend
-      await register(formData.username, formData.email, formData.password);
-      
-      // 3. Redirect (either to login or dashboard if auto-login)
-      navigate('/dashboard'); 
+      // Appel direct à l'API signup
+      await api.post('/auth/signup/', {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
+
+      // Redirection vers login après succès
+      navigate('/login');
 
     } catch (err) {
-      const message = err.response?.data?.message || "An error occurred during signup.";
+      console.error(err);
+      const message = err.response?.data?.message || 'An error occurred during signup.';
       setError(message);
+    } finally {
       setLoading(false);
     }
   };
@@ -58,8 +59,7 @@ const Signup = () => {
       <Container className="d-flex justify-content-center">
         <Card className="shadow-lg border-0 rounded-4" style={{ width: '100%', maxWidth: '450px' }}>
           <Card.Body className="p-5">
-            
-            {/* Header with Icon (Green for signup) */}
+            {/* Header */}
             <div className="text-center mb-4">
               <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: '60px', height: '60px', fontSize: '24px' }}>
                 👤
@@ -72,97 +72,58 @@ const Signup = () => {
             {error && <Alert variant="danger" className="text-center py-2 fade show">{error}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-              
-              {/* Username */}
               <FloatingLabel controlId="floatingInputUser" label="Username" className="mb-3">
-                <Form.Control 
-                  type="text" 
-                  name="username"
-                  placeholder="Username" 
-                  value={formData.username}
-                  onChange={handleChange}
-                  required 
-                  autoFocus
-                />
+                <Form.Control type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required autoFocus />
               </FloatingLabel>
 
-              {/* Email */}
               <FloatingLabel controlId="floatingInputEmail" label="Email Address" className="mb-3">
-                <Form.Control 
-                  type="email" 
-                  name="email"
-                  placeholder="name@example.com" 
-                  value={formData.email}
-                  onChange={handleChange}
-                  required 
-                />
+                <Form.Control type="email" name="email" placeholder="name@example.com" value={formData.email} onChange={handleChange} required />
               </FloatingLabel>
 
-              {/* Password */}
               <div className="mb-3 position-relative">
                 <FloatingLabel controlId="floatingPassword" label="Password">
-                  <Form.Control 
-                    type={showPassword ? "text" : "password"} 
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required 
-                    style={{ paddingRight: '45px' }}
-                  />
+                  <Form.Control type={showPassword ? 'text' : 'password'} name="password" placeholder="Password" value={formData.password} onChange={handleChange} required style={{ paddingRight: '45px' }} />
                 </FloatingLabel>
-                <span 
+                <span
                   onClick={() => setShowPassword(!showPassword)}
                   role="button"
                   className="text-muted opacity-75"
-                  style={{
-                    position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)',
-                    cursor: 'pointer', zIndex: 5, userSelect: 'none'
-                  }}
+                  style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', zIndex: 5, userSelect: 'none' }}
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </span>
               </div>
 
-              {/* Confirm Password */}
               <div className="mb-4">
                 <FloatingLabel controlId="floatingConfirmPassword" label="Confirm Password">
-                  <Form.Control 
-                    type={showPassword ? "text" : "password"} 
+                  <Form.Control
+                    type={showPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     placeholder="Confirm Password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    required 
-                    className={formData.confirmPassword && formData.password !== formData.confirmPassword ? "is-invalid" : ""}
+                    required
+                    className={formData.confirmPassword && formData.password !== formData.confirmPassword ? 'is-invalid' : ''}
                   />
                 </FloatingLabel>
               </div>
 
-              {/* Signup Button */}
-              <Button 
-                variant="success" 
-                type="submit" 
-                className="w-100 py-2 fw-bold rounded-pill"
-                disabled={loading}
-              >
+              <Button variant="success" type="submit" className="w-100 py-2 fw-bold rounded-pill" disabled={loading}>
                 {loading ? (
                   <>
-                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2"/>
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                     Signing Up...
                   </>
                 ) : (
-                  "Sign Up"
+                  'Sign Up'
                 )}
               </Button>
             </Form>
 
-            {/* Link to Login */}
             <div className="text-center mt-4">
               <span className="text-muted">Already have an account? </span>
               <Link to="/login" className="text-decoration-none fw-bold text-primary">Login</Link>
             </div>
-
           </Card.Body>
         </Card>
       </Container>
